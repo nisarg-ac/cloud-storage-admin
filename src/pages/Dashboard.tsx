@@ -41,12 +41,12 @@ export const Dashboard = () => {
 
     const viewsData = dashboardStats.trends.fileViewsTrend?.map((t) => ({
         name: new Date(t.month).toLocaleString('default', { month: 'short' }),
-        views: t.viewCount,
+        views: t.viewCount || 0,
     })) || [];
 
     const downloadsData = dashboardStats.trends.downloadsTrend?.map((t) => ({
         name: new Date(t.month).toLocaleString('default', { month: 'short' }),
-        downloads: t.downloadCount,
+        downloads: t.downloadCount || 0,
     })) || [];
 
     return (

@@ -137,7 +137,7 @@ export const Analytics = () => {
                             <TableHeader className="bg-slate-50 dark:bg-slate-900/80">
                                 <TableRow>
                                     <TableHead className="pl-6">User</TableHead>
-                                    <TableHead className="text-right pr-6">Used</TableHead>
+                                    <TableHead className="text-right pr-6">Storage Used</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -174,7 +174,7 @@ export const Analytics = () => {
                             <TableHeader className="bg-slate-50 dark:bg-slate-900/80">
                                 <TableRow>
                                     <TableHead className="pl-6">User</TableHead>
-                                    <TableHead className="text-right pr-6">Views</TableHead>
+                                    <TableHead className="text-right pr-6">Total Views</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -211,7 +211,7 @@ export const Analytics = () => {
                             <TableHeader className="bg-slate-50 dark:bg-slate-900/80">
                                 <TableRow>
                                     <TableHead className="pl-6">User</TableHead>
-                                    <TableHead className="text-right pr-6">Downloads</TableHead>
+                                    <TableHead className="text-right pr-6">Total Downloads</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

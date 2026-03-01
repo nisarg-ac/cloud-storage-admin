@@ -179,8 +179,8 @@ export const UsersManagement = () => {
                                             <TableCell>
                                                 <div className="space-y-1.5 [&_[data-state]]:bg-slate-100 dark:[&_[data-state]]:bg-slate-800">
                                                     <div className="flex justify-between text-xs">
-                                                        <span className="font-medium">{formatSize(user.totalUsedStorageBytes, SizeUnits.Bytes)}</span>
-                                                        <span className="text-slate-500">{formatSize(user.storageLimitInBytes, SizeUnits.Bytes)} free</span>
+                                                        <span className="font-medium">{formatSize(user.totalUsedStorageBytes || 0, SizeUnits.Bytes)}</span>
+                                                        <span className="text-slate-500">{formatSize(user.storageLimitInBytes || 0, SizeUnits.Bytes)} free</span>
                                                     </div>
                                                     {/* We apply color by targeting the child indicator, or modify progress component directly later */}
                                                     <div className={`[&_div]:${progressColorState}`}>
@@ -190,8 +190,8 @@ export const UsersManagement = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="text-xs space-y-1">
-                                                    <div><span className="text-slate-500">Views:</span> {user.totalViews}</div>
-                                                    <div><span className="text-slate-500">DLs:</span> {user.totalDownloads}</div>
+                                                    <div><span className="text-slate-500">Views:</span> {user.totalViews || 0}</div>
+                                                    <div><span className="text-slate-500">DLs:</span> {user.totalDownloads || 0}</div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-sm text-slate-600 dark:text-slate-400">
