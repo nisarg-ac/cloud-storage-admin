@@ -57,7 +57,11 @@ export const restoreUser = async (id: string): Promise<boolean> => {
 };
 
 export const blockUser = async (id: string): Promise<boolean> => {
-    return new Promise((resolve) => setTimeout(() => {
-        resolve(true);
-    }, 300));
+    try {
+        await apiClient.patch(`/web/admin/users/${id}/block`);
+        return true;
+    } catch (error) {
+        console.error(`Failed to block user with id ${id}`, error);
+        return false;
+    }
 }
