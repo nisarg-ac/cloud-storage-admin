@@ -14,7 +14,7 @@ export const ReportedFiles = () => {
     const navigate = useNavigate();
     const user = useAuthStore(state => state.user);
     const superAdmin = isSuperAdmin(user);
-    const { reportedItems, fetchReportedItems, loading, hasMore } = useReportedStore();
+    const { reportedItems, fetchReportedItems, loading, hasMore, error } = useReportedStore();
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 400);
 
@@ -62,6 +62,11 @@ export const ReportedFiles = () => {
                     />
                 </div>
             </div>
+            {error && (
+                <div className="p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+                    Failed to load reported files: {error}
+                </div>
+            )}
 
             <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
                 <div className="overflow-auto max-h-[calc(100vh-220px)] relative">
@@ -89,7 +94,7 @@ export const ReportedFiles = () => {
                             ) : !filteredItems.length ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center py-8 text-slate-500">
-                                        No reported items found matching your search.
+                                        {debouncedSearch ? "No reported items found matching your search." : "No reported items found."}
                                     </TableCell>
                                 </TableRow>
                             ) : (

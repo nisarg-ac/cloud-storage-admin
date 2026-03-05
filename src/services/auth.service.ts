@@ -8,7 +8,7 @@ const superAdminEmails = (import.meta.env.VITE_ADMIN_TOKEN ?? "")
 
 export const login = async (email: string, otp: string): Promise<{ token: string; user: { email: string; role: UserRole } }> => {
     try {
-        const response = await apiClient.post("/auth/verify-otp", { email, otp });
+        const response = await apiClient.post("/web/admin/auth/verify-otp", { email, otp });
         const { token, user } = response.data?.data || {};
         const resolvedEmail = user?.email || email;
         const role = superAdminEmails.includes(resolvedEmail.toLowerCase()) ? "superadmin" : "admin";
