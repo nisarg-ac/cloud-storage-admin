@@ -1,11 +1,12 @@
 import { apiClient } from "./api";
+import type { UserRole } from "../store/auth.store";
 
 const superAdminEmails = (import.meta.env.VITE_ADMIN_TOKEN ?? "")
     .split(",")
     .map((e: string) => e.trim().toLowerCase())
     .filter(Boolean);
 
-export const login = async (email: string, otp: string): Promise<{ token: string; user: { email: string; role: string } }> => {
+export const login = async (email: string, otp: string): Promise<{ token: string; user: { email: string; role: UserRole } }> => {
     try {
         const response = await apiClient.post("/auth/verify-otp", { email, otp });
         const { token, user } = response.data?.data || {};

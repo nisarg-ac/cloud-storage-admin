@@ -18,7 +18,6 @@ export const UserAffiliates = () => {
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 400);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -31,7 +30,6 @@ export const UserAffiliates = () => {
         try {
             const res = await getAffiliateUsers({ userId, page: pageNum, limit: 20, search: searchTerm || undefined });
             setUsers(prev => replace ? res.data : [...prev, ...res.data]);
-            setTotalPages(res.meta.totalPages);
             setTotal(res.meta.total);
             setPage(pageNum);
             setHasMore(pageNum < res.meta.totalPages);

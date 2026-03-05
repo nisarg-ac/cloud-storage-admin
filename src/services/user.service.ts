@@ -58,7 +58,7 @@ export const restoreUser = async (id: string): Promise<boolean> => {
     }
 };
 
-export const blockUser = async (id: string): Promise<boolean> => {
+export const blockUser = async (_id: string): Promise<boolean> => {
     return new Promise((resolve) => setTimeout(() => {
         resolve(true);
     }, 300));
