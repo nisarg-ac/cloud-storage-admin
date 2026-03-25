@@ -91,6 +91,15 @@ export const calculateUserStorage = (user?: User | null) => {
     };
 };
 
+export const convertUnits = (units?: string | null): string => {
+    if (!units) return '0.000000';
+    try {
+        return (Number(BigInt(units)) / 1_000_000).toFixed(6);
+    } catch {
+        return '0.000000';
+    }
+};
+
 export const calculateUserDownloads = (userId: string, downloads: FSObjectDownload[]): number => {
     return downloads.filter((d) => d.userId === userId).length;
 };

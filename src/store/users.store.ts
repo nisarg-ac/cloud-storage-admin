@@ -5,6 +5,12 @@ import * as userService from "../services/user.service";
 // import * as viewsService from "../services/views.service";
 // import * as downloadsService from "../services/downloads.service";
 
+export interface UsersFilters {
+    search: string;
+    withDeleted: boolean;
+    hasEarningPlan: 'ALL' | 'HAS_PLAN' | 'NO_PLAN';
+}
+
 interface UsersState {
     users: User[];
     loading: boolean;
@@ -15,13 +21,20 @@ interface UsersState {
     userDownloadsCount: Record<string, number>;
     hasMore: boolean;
     page: number;
-    currentSearch: string;
-    fetchUsers: (reset?: boolean, search?: string) => Promise<void>;
+    total: number;
+    filters: UsersFilters;
+    fetchUsers: (reset?: boolean, filters?: Partial<UsersFilters>) => Promise<void>;
     fetchUserDetails: (userId: string) => Promise<void>;
     deleteUser: (userId: string) => Promise<void>;
     restoreUser: (userId: string) => Promise<void>;
     blockUser: (userId: string) => Promise<void>;
 }
+
+const DEFAULT_FILTERS: UsersFilters = {
+    search: '',
+    withDeleted: false,
+    hasEarningPlan: 'ALL',
+};
 
 export const useUsersStore = create<UsersState>((set, get) => ({
     users: [],
@@ -33,33 +46,39 @@ export const useUsersStore = create<UsersState>((set, get) => ({
     userDownloadsCount: {},
     hasMore: true,
     page: 1,
-    currentSearch: '',
+    total: 0,
+    filters: { ...DEFAULT_FILTERS },
 
-    fetchUsers: async (reset = false, search?: string) => {
-        const currentSearch = reset ? (search ?? '') : get().currentSearch;
+    fetchUsers: async (reset = false, filters?: Partial<UsersFilters>) => {
+        const currentFilters = reset ? { ...DEFAULT_FILTERS, ...filters } : get().filters;
         const currentPage = reset ? 1 : get().page;
         if (reset) {
-            set({ loading: true, error: null, users: [], page: 1, hasMore: true, currentSearch });
+            set({ loading: true, error: null, users: [], page: 1, hasMore: true, filters: currentFilters });
         } else {
             set({ loading: true, error: null });
         }
 
         try {
-            const usersList = await userService.getUsers({
+            const result = await userService.getUsers({
                 page: currentPage,
                 limit: 20,
-                ...(currentSearch ? { search: currentSearch } : {}),
+                ...(currentFilters.search ? { search: currentFilters.search } : {}),
+                ...(currentFilters.withDeleted ? { withDeleted: true } : {}),
+                ...(currentFilters.hasEarningPlan === 'HAS_PLAN' ? { hasEarningPlan: true } : {}),
+                ...(currentFilters.hasEarningPlan === 'NO_PLAN' ? { hasEarningPlan: false } : {}),
             });
 
             const currentUsers = reset ? [] : get().users;
-            const newUsers = [...currentUsers, ...usersList];
+            const newUsers = [...currentUsers, ...result.users];
+            const total = result.total || newUsers.length;
+            const hasMore = result.users.length === 20 && newUsers.length < total;
 
-            const hasMore = usersList.length === 20;
             set({
                 users: newUsers,
+                total,
                 loading: false,
                 hasMore,
-                page: currentPage + 1
+                page: currentPage + 1,
             });
         } catch (err: any) {
             set({ error: err.message, loading: false });

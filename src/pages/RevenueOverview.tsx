@@ -3,6 +3,7 @@ import { OverviewResponse, earningService } from '../services/earning.service';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Activity, DollarSign, PieChart, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { convertUnits } from '../utils';
 
 export const RevenueOverview = () => {
     const [data, setData] = useState<OverviewResponse | null>(null);
@@ -22,10 +23,6 @@ export const RevenueOverview = () => {
         };
         fetchOverview();
     }, []);
-
-    const convertUnits = (units: string) => {
-        return (BigInt(units) / BigInt(1_000_000)).toString();
-    };
 
     const statusIcons: Record<string, React.ReactNode> = {
         PENDING: <Clock className="w-5 h-5 text-amber-500" />,

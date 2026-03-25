@@ -10,34 +10,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
-import { Eye, Trash2, Search, RotateCcw } from "lucide-react";
+import { Eye, Trash2, Search, RotateCcw, Zap } from "lucide-react";
 
 export const UsersManagement = () => {
-    const { users, fetchUsers, loading, deleteUser, restoreUser, hasMore } = useUsersStore();
+    const { users, fetchUsers, loading, deleteUser, restoreUser, hasMore, total } = useUsersStore();
 
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("ALL");
     const [filterRole, setFilterRole] = useState("ALL");
+    const [filterEarningPlan, setFilterEarningPlan] = useState<"ALL" | "HAS_PLAN" | "NO_PLAN">("ALL");
     const debouncedSearch = useDebounce(search, 400);
 
     const [userToDelete, setUserToDelete] = useState<string | null>(null);
     const [userToRestore, setUserToRestore] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchUsers(true, debouncedSearch);
-    }, [debouncedSearch, fetchUsers]);
+        fetchUsers(true, {
+            search: debouncedSearch,
+            withDeleted: filterStatus === "DELETED",
+            hasEarningPlan: filterEarningPlan,
+        });
+    }, [debouncedSearch, filterStatus, filterEarningPlan, fetchUsers]);
 
     const filteredUsers = useMemo(() => {
-        let result = users;
-
-        if (filterRole === "ADMIN") result = result.filter(u => u.isAdmin);
-        if (filterRole === "USER") result = result.filter(u => !u.isAdmin);
-
-        if (filterStatus === "ACTIVE") result = result.filter(u => !u.deletedAt);
-        if (filterStatus === "DELETED") result = result.filter(u => !!u.deletedAt);
-
-        return result;
-    }, [users, filterRole, filterStatus]);
+        if (filterRole === "ADMIN") return users.filter(u => u.isAdmin);
+        if (filterRole === "USER") return users.filter(u => !u.isAdmin);
+        return users;
+    }, [users, filterRole]);
 
     const observer = useRef<IntersectionObserver | null>(null);
     const lastUserElementRef = useCallback((node: HTMLDivElement | null) => {
@@ -76,9 +75,9 @@ export const UsersManagement = () => {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-3 flex-wrap">
                     <Select value={filterRole} onValueChange={setFilterRole}>
-                        <SelectTrigger className="w-[140px] bg-white dark:bg-slate-950">
+                        <SelectTrigger className="w-[130px] bg-white dark:bg-slate-950">
                             <SelectValue placeholder="Role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -88,7 +87,7 @@ export const UsersManagement = () => {
                         </SelectContent>
                     </Select>
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="w-[140px] bg-white dark:bg-slate-950">
+                        <SelectTrigger className="w-[130px] bg-white dark:bg-slate-950">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -97,8 +96,22 @@ export const UsersManagement = () => {
                             <SelectItem value="DELETED">Deleted</SelectItem>
                         </SelectContent>
                     </Select>
+                    <Select value={filterEarningPlan} onValueChange={v => setFilterEarningPlan(v as typeof filterEarningPlan)}>
+                        <SelectTrigger className="w-[160px] bg-white dark:bg-slate-950">
+                            <SelectValue placeholder="Earning Plan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ALL">All Plans</SelectItem>
+                            <SelectItem value="HAS_PLAN">Has Earning Plan</SelectItem>
+                            <SelectItem value="NO_PLAN">No Earning Plan</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
+
+            {total > 0 && (
+                <p className="text-sm text-slate-500">{total} user{total !== 1 ? 's' : ''} found</p>
+            )}
 
             <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
                 <div className="overflow-auto max-h-[calc(100vh-220px)] relative">
@@ -111,6 +124,7 @@ export const UsersManagement = () => {
                                 <TableHead>Badges</TableHead>
                                 <TableHead className="w-[200px]">Storage (Used/Limit)</TableHead>
                                 <TableHead>Activity</TableHead>
+                                <TableHead>Earning Plan</TableHead>
                                 <TableHead>Joined</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -182,6 +196,19 @@ export const UsersManagement = () => {
                                                     <div><span className="text-slate-500">Views:</span> {user.totalViews}</div>
                                                     <div><span className="text-slate-500">DLs:</span> {user.totalDownloads}</div>
                                                 </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {user.activeEarningPlan ? (
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                                            <Zap className="w-3 h-3" />
+                                                            {user.activeEarningPlan.planName}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400">{user.activeEarningPlan.planType}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">—</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-sm text-slate-600 dark:text-slate-400">
                                                 {formatDate(user.createdAt)}

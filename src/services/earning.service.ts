@@ -17,11 +17,22 @@ export interface OverviewResponse {
     payoutsByStatus: PayoutsByStatus[];
 }
 
+// Normalized shape (no type filter — currently broken server-side)
+// Typed shape (type=VIEW or type=REFERRAL)
+// Typed shape (type=PAYOUT)
 export interface ActivityFeedItem {
     id: string;
-    type: string;
-    user_id: string;
-    units: string;
+    // normalized (no type filter)
+    type?: string;
+    user_id?: string;
+    units?: string;
+    // VIEW / REFERRAL shape
+    event_type?: string;
+    actor_user_id?: string;
+    beneficiary_user_id?: string;
+    reward_units?: string;
+    // PAYOUT shape
+    total_units?: string;
     currency: string;
     status: string;
     timestamp: string;
@@ -170,6 +181,40 @@ export interface EarningConfig {
     updatedBy: string;
 }
 
+export interface SystemConfig {
+    HIGH_VELOCITY_THRESHOLD: string;
+    IP_CLUSTER_THRESHOLD: string;
+    IP_RATE_LIMIT_PER_MIN: string;
+    FRAUD_HOLD_DAYS: string;
+    PAYOUT_HOLD_DAYS: string;
+    [key: string]: string;
+}
+
+export interface SystemConfigHistory {
+    id: string;
+    admin_user_id: string;
+    action: string;
+    entity_type: string;
+    entity_id: string;
+    before_value: any;
+    after_value: any;
+    note: string | null;
+    created_at: string;
+}
+
+export interface SystemConfigResponse {
+    config: SystemConfig;
+    history: SystemConfigHistory[];
+}
+
+export interface SystemConfigUpdatePayload {
+    highVelocityThreshold?: number;
+    ipClusterThreshold?: number;
+    ipRateLimitPerMin?: number;
+    fraudHoldDays?: number;
+    payoutHoldDays?: number;
+}
+
 export interface EarningPlan {
     id: string;
     planName: string;
@@ -189,6 +234,24 @@ export interface PaginatedResult<T> {
     total: number;
     page: number;
     limit: number;
+}
+
+// Actual envelope the backend sends for every response
+interface ApiResponse<T> {
+    success: boolean;
+    status: string;
+    data: T;
+    meta: null;
+    error: null | string;
+}
+
+// Helper — unwraps a list response into a consistent PaginatedResult.
+// The server currently doesn't return total/page/limit in meta, so we
+// infer hasMore from whether we received a full page of results.
+function toPaginated<T>(items: T[], page: number, limit: number): PaginatedResult<T> {
+    // If we got a full page, assume there may be more (next page will return empty if not).
+    const inferredTotal = items.length === limit ? page * limit + 1 : (page - 1) * limit + items.length;
+    return { data: items, total: inferredTotal, page, limit };
 }
 
 export interface UserEarningProfile {
@@ -248,19 +311,19 @@ export const earningService = {
     },
 
     getActivityFeed: async (params: { page?: number; limit?: number; date?: string; type?: string }) => {
-        const response = await apiClient.get<PaginatedResult<ActivityFeedItem>>('/web/earning/activity-feed', { params });
-        return response.data;
+        const response = await apiClient.get<ApiResponse<ActivityFeedItem[]>>('/web/earning/activity-feed', { params });
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
     },
 
     // Revenue Events
-    getEvents: async (params: { page?: number; limit?: number; status?: string; type?: string; userId?: string; hasFraudFlags?: boolean; sortBy?: string; sortDir?: string }) => {
-        const response = await apiClient.get<PaginatedResult<RevenueEvent>>('/web/earning/events', { params });
-        return response.data;
+    getEvents: async (params: { page?: number; limit?: number; status?: string; type?: string; userId?: string; hasFraudFlags?: boolean; dateFrom?: string; dateTo?: string; sortBy?: string; sortDir?: string }) => {
+        const response = await apiClient.get<ApiResponse<RevenueEvent[]>>('/web/earning/events', { params });
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
     },
 
     getFraudQueue: async (params: { page?: number; limit?: number }) => {
-        const response = await apiClient.get<PaginatedResult<RevenueEvent>>('/web/earning/events/fraud-queue', { params });
-        return response.data;
+        const response = await apiClient.get<ApiResponse<RevenueEvent[]>>('/web/earning/events/fraud-queue', { params });
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
     },
 
     getEventById: async (id: string) => {
@@ -294,9 +357,9 @@ export const earningService = {
     },
 
     // Payouts
-    getPayouts: async (params: { page?: number; limit?: number; status?: string; userId?: string; sortBy?: string; sortDir?: string }) => {
-        const response = await apiClient.get<PaginatedResult<Payout>>('/web/earning/payouts', { params });
-        return response.data;
+    getPayouts: async (params: { page?: number; limit?: number; status?: string; userId?: string; amountMin?: string; amountMax?: string; dateFrom?: string; dateTo?: string; sortBy?: string; sortDir?: string }) => {
+        const response = await apiClient.get<ApiResponse<Payout[]>>('/web/earning/payouts', { params });
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
     },
 
     getPayoutById: async (id: string) => {
@@ -367,12 +430,12 @@ export const earningService = {
 
     // Config
     getConfig: async () => {
-        const response = await apiClient.get<{ data: EarningConfig }>('/web/earning/config');
+        const response = await apiClient.get<{ data: SystemConfigResponse }>('/web/earning/config');
         return response.data.data;
     },
 
-    updateConfig: async (configData: Partial<EarningConfig>) => {
-        const response = await apiClient.put<{ data: EarningConfig }>('/web/earning/config', configData);
+    updateConfig: async (configData: SystemConfigUpdatePayload) => {
+        const response = await apiClient.patch<{ data: { updatedKeys: string[] } }>('/web/earning/config', configData);
         return response.data.data;
     },
 
@@ -388,7 +451,7 @@ export const earningService = {
     },
 
     updatePlan: async (id: string, planData: Partial<EarningPlan>) => {
-        const response = await apiClient.put<{ data: EarningPlan }>(`/web/earning/plans/${id}`, planData);
+        const response = await apiClient.patch<{ data: EarningPlan }>(`/web/earning/plans/${id}`, planData);
         return response.data.data;
     },
 
@@ -398,8 +461,8 @@ export const earningService = {
     },
 
     // Audit Log
-    getAuditLog: async (params?: { page?: number; limit?: number; adminUserId?: string; action?: string; entityType?: string; entityId?: string; format?: string }) => {
-        const response = await apiClient.get<PaginatedResult<AuditLogItem>>('/web/earning/audit-log', { params });
-        return response.data;
+    getAuditLog: async (params?: { page?: number; limit?: number; adminUserId?: string; action?: string; entityType?: string; entityId?: string; dateFrom?: string; dateTo?: string; format?: string }) => {
+        const response = await apiClient.get<ApiResponse<AuditLogItem[]>>('/web/earning/audit-log', { params });
+        return toPaginated(response.data.data ?? [], params?.page ?? 1, params?.limit ?? 50);
     }
 };

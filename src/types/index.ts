@@ -25,6 +25,12 @@ export interface User {
     planName: string;
     totalDownloads: number;
     totalViews: number;
+    activeEarningPlan?: {
+        planId: string;
+        planName: string;
+        planType: string;
+        selectedAt: string;
+    } | null;
     storageLimit: {
         usedImageStorageBytes: number;
         usedVideoStorageBytes: number;

@@ -8,23 +8,36 @@ interface GetUsersParams {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    withDeleted?: boolean;
+    hasEarningPlan?: boolean;
 }
 
-export const getUsers = async (params?: GetUsersParams): Promise<User[]> => {
+export interface GetUsersResult {
+    users: User[];
+    total: number;
+}
+
+export const getUsers = async (params?: GetUsersParams): Promise<GetUsersResult> => {
     try {
         const response = await apiClient.get('/web/admin/users', {
             params: {
                 sortBy: 'createdAt',
                 sortOrder: 'desc',
                 ...params,
-                ...(params?.search ? { search: params.search } : {}),
             }
         });
-        const apiUsers = response.data?.data || [];
-        return apiUsers;
+        const data = response.data?.data;
+        // Support both array response and paginated { users, total } response
+        if (Array.isArray(data)) {
+            return { users: data, total: data.length };
+        }
+        return {
+            users: data?.users ?? data?.items ?? [],
+            total: response.data?.meta?.total ?? response.data?.total ?? 0,
+        };
     } catch (error) {
         console.error("Failed to fetch users", error);
-        return [];
+        return { users: [], total: 0 };
     }
 };
 
