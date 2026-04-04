@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { appConfigService, AppConfig as IAppConfig } from '../services/appConfig.service';
+import { appConfigService } from '../services/appConfig.service';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Settings, Save, Globe, Monitor, Check, X } from 'lucide-react';
+import { Settings, Globe, Monitor, Check, X } from 'lucide-react';
 
 export const AppConfig = () => {
-    const [config, setConfig] = useState<IAppConfig | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
@@ -19,7 +18,6 @@ export const AppConfig = () => {
         try {
             setLoading(true);
             const data = await appConfigService.getAppConfig();
-            setConfig(data);
             setIsWebsurfer(data.isWebsurfer);
             setIsDisplay(data.isDisplay);
         } catch (error) {
@@ -33,19 +31,27 @@ export const AppConfig = () => {
         fetchConfig();
     }, []);
 
-    const handleSave = async () => {
+    const handleToggle = async (fieldId: string, newValue: boolean) => {
         setSaving(true);
         setSaveError(null);
         setSaveSuccess(false);
         try {
-            await appConfigService.updateAppConfig({
-                isWebsurfer,
-                isDisplay,
-            });
+            const updatedConfig = {
+                isWebsurfer: fieldId === 'isWebsurfer' ? newValue : isWebsurfer,
+                isDisplay: fieldId === 'isDisplay' ? newValue : isDisplay,
+            };
+
+            await appConfigService.updateAppConfig(updatedConfig);
+
+            // Update local state
+            if (fieldId === 'isWebsurfer') {
+                setIsWebsurfer(newValue);
+            } else {
+                setIsDisplay(newValue);
+            }
+
             setSaveSuccess(true);
-            setConfig({ isWebsurfer, isDisplay });
-            setTimeout(() => setSaveSuccess(false), 3000);
-            fetchConfig()
+            setTimeout(() => setSaveSuccess(false), 2000);
         } catch (error: unknown) {
             const apiError = error as import('axios').AxiosError<{ message?: string }>;
             setSaveError(apiError?.response?.data?.message || 'Failed to update app config');
@@ -63,7 +69,6 @@ export const AppConfig = () => {
             description: 'Enables or disables web surfing URLs in the mobile app',
             icon: Globe,
             value: isWebsurfer,
-            setValue: setIsWebsurfer,
         },
         {
             id: 'isDisplay',
@@ -71,7 +76,6 @@ export const AppConfig = () => {
             description: 'Enables or disables the display banner in the mobile app',
             icon: Monitor,
             value: isDisplay,
-            setValue: setIsDisplay,
         },
     ];
 
@@ -111,7 +115,8 @@ export const AppConfig = () => {
                                         <Button
                                             variant={field.value ? 'default' : 'outline'}
                                             size="sm"
-                                            onClick={() => field.setValue(!field.value)}
+                                            onClick={() => handleToggle(field.id, !field.value)}
+                                            disabled={saving}
                                             className={`w-24 justify-between transition-all ${field.value ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
                                         >
                                             {field.value ? (
@@ -126,9 +131,6 @@ export const AppConfig = () => {
                                                 </>
                                             )}
                                         </Button>
-                                        {config && field.value !== (config as any)[field.id] && (
-                                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-tight">Modified</span>
-                                        )}
                                     </div>
                                 </div>
                             );
@@ -146,12 +148,6 @@ export const AppConfig = () => {
                         </div>
                     )}
 
-                    <div className="pt-4 flex justify-end border-t border-slate-100 dark:border-slate-800">
-                        <Button onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 px-6">
-                            <Save className="w-4 h-4" />
-                            {saving ? 'Saving...' : 'Apply Changes'}
-                        </Button>
-                    </div>
                 </CardContent>
             </Card>
 
@@ -159,7 +155,7 @@ export const AppConfig = () => {
                 <Globe className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
                 <div className="text-sm text-amber-800 dark:text-amber-400">
                     <p className="font-semibold">Important Note</p>
-                    <p className="mt-1">All changes made here are recorded in the admin audit log. Feature flags default to <code className="bg-amber-100 dark:bg-amber-900/30 px-1 rounded">false</code> on first deploy.</p>
+                    <p className="mt-1">All changes made here are recorded in the admin audit log. Feature flags default to <code className="bg-amber-100 dark:bg-amber-900/30 px-1 rounded">Disabled</code> on first deploy.</p>
                 </div>
             </div>
         </div>
