@@ -17,9 +17,24 @@ export const login = async (email: string, otp: string): Promise<{ token: string
             user: { email: resolvedEmail, role }
         };
     } catch (error: unknown) {
-        const authError = error as import('axios').AxiosError<{ message?: string }>;
-        throw new Error(authError.response?.data?.message || "Invalid OTP");
+        const authError = error as import('axios').AxiosError<{ message?: string; error?: string }>;
+        const errorMessage = authError.response?.data?.error || authError.response?.data?.message || "Invalid OTP";
+        throw new Error(errorMessage);
     }
+};
+
+export const sendOtp = async (email: string): Promise<void> => {
+    try {
+        await apiClient.post("/web/admin/auth/send-otp", { email });
+    } catch (error: unknown) {
+        const authError = error as import('axios').AxiosError<{ message?: string; error?: string }>;
+        const errorMessage = authError.response?.data?.message || authError.response?.data?.error || "Failed to send OTP";
+        throw new Error(errorMessage);
+    }
+};
+
+export const isSuperAdminEmail = (email: string): boolean => {
+    return superAdminEmails.includes(email.toLowerCase());
 };
 
 export const logout = async (): Promise<void> => {
