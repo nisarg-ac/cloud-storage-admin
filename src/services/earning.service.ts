@@ -263,14 +263,28 @@ interface ApiResponse<T> {
     success: boolean;
     status: string;
     data: T;
-    meta: null;
+    meta: {
+        total?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+    } | null;
     error: null | string;
 }
 
 // Helper — unwraps a list response into a consistent PaginatedResult.
 // The server currently doesn't return total/page/limit in meta, so we
 // infer hasMore from whether we received a full page of results.
-function toPaginated<T>(items: T[], page: number, limit: number): PaginatedResult<T> {
+function toPaginated<T>(items: T[], page: number, limit: number, response?: ApiResponse<T[]>): PaginatedResult<T> {
+    // Priority: 1. Server metadata total, 2. Server root total (fallback), 3. Inferred total
+    const serverTotal = response?.meta?.total;
+    
+    // If we have a server total, use it.
+    if (typeof serverTotal === 'number') {
+        return { data: items, total: serverTotal, page, limit };
+    }
+
+    // Inferred logic for backward compatibility or simple endpoints:
     // If we got a full page, assume there may be more (next page will return empty if not).
     const inferredTotal = items.length === limit ? page * limit + 1 : (page - 1) * limit + items.length;
     return { data: items, total: inferredTotal, page, limit };
@@ -334,18 +348,18 @@ export const earningService = {
 
     getActivityFeed: async (params: { page?: number; limit?: number; date?: string; type?: string }) => {
         const response = await apiClient.get<ApiResponse<ActivityFeedItem[]>>('/web/earning/activity-feed', { params });
-        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50, response.data);
     },
 
     // Revenue Events
     getEvents: async (params: { page?: number; limit?: number; status?: string; type?: string; userId?: string; hasFraudFlags?: boolean; dateFrom?: string; dateTo?: string; sortBy?: string; sortDir?: string }) => {
         const response = await apiClient.get<ApiResponse<RevenueEvent[]>>('/web/earning/events', { params });
-        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50, response.data);
     },
 
     getFraudQueue: async (params: { page?: number; limit?: number }) => {
         const response = await apiClient.get<ApiResponse<RevenueEvent[]>>('/web/earning/events/fraud-queue', { params });
-        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50, response.data);
     },
 
     getEventById: async (id: string) => {
@@ -381,7 +395,7 @@ export const earningService = {
     // Payouts
     getPayouts: async (params: { page?: number; limit?: number; status?: string; userId?: string; amountMin?: string; amountMax?: string; dateFrom?: string; dateTo?: string; sortBy?: string; sortDir?: string }) => {
         const response = await apiClient.get<ApiResponse<Payout[]>>('/web/earning/payouts', { params });
-        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50);
+        return toPaginated(response.data.data ?? [], params.page ?? 1, params.limit ?? 50, response.data);
     },
 
     getPayoutById: async (id: string) => {
@@ -485,6 +499,6 @@ export const earningService = {
     // Audit Log
     getAuditLog: async (params?: { page?: number; limit?: number; adminUserId?: string; action?: string; entityType?: string; entityId?: string; dateFrom?: string; dateTo?: string; format?: string }) => {
         const response = await apiClient.get<ApiResponse<AuditLogItem[]>>('/web/earning/audit-log', { params });
-        return toPaginated(response.data.data ?? [], params?.page ?? 1, params?.limit ?? 50);
+        return toPaginated(response.data.data ?? [], params?.page ?? 1, params?.limit ?? 50, response.data);
     }
 };

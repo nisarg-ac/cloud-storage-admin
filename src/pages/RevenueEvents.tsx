@@ -19,6 +19,8 @@ const SORT_OPTIONS = [
     { value: 'status', label: 'Status' },
 ];
 
+const PAGE_SIZE = 1000;
+
 const STATUS_COLORS: Record<string, string> = {
     PENDING: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
     APPROVED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
@@ -52,12 +54,12 @@ export const RevenueEvents = () => {
         try {
             setLoading(true);
             if (activeTab === 'fraud') {
-                const res = await earningService.getFraudQueue({ page, limit: 1000 });
+                const res = await earningService.getFraudQueue({ page, limit: PAGE_SIZE });
                 setData(res);
             } else {
                 const res = await earningService.getEvents({
                     page,
-                    limit: 1000,
+                    limit: PAGE_SIZE,
                     status: statusFilter || undefined,
                     type: typeFilter || undefined,
                     dateFrom: dateFrom || undefined,
@@ -355,11 +357,11 @@ export const RevenueEvents = () => {
                     {data && data.total > 0 && (
                         <div className="flex items-center justify-between mt-4">
                             <span className="text-sm text-slate-500">
-                                Showing {(page - 1) * 50 + 1}–{Math.min(page * 50, data.total)} of {data.total}
+                                Showing {(page - 1) * PAGE_SIZE + 1}-{(page - 1) * PAGE_SIZE + data.data.length} of {data.total}
                             </span>
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-                                <Button variant="outline" onClick={() => setPage(p => p + 1)} disabled={page * 50 >= data.total}>Next</Button>
+                                <Button variant="outline" onClick={() => setPage(p => p + 1)} disabled={page * PAGE_SIZE >= data.total}>Next</Button>
                             </div>
                         </div>
                     )}
