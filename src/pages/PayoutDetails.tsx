@@ -221,7 +221,7 @@ export const PayoutDetails = () => {
                         <>
                             <Row label="Account Number" value={
                                 <span className="font-mono">
-                                    ****{(payout.snapshot_account_number || payout.snapshotAccountNumber)!.slice(-4)}
+                                    {payout.snapshot_account_number || payout.snapshotAccountNumber}
                                 </span>
                             } />
                             <Row label="IFSC Code" value={payout.snapshot_ifsc_code || payout.snapshotIfscCode || '—'} />
