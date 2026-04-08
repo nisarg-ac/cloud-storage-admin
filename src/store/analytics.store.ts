@@ -8,13 +8,13 @@ export interface DashboardStats {
         deletedUsers: number;
         totalStorageBytes: number;
         totalSharedLinkViews: number;
-        totalDownloads: number;
     };
     trends: {
         storageUsageTrend: { month: string; storageGB: number }[];
         fileViewsTrend: { month: string; viewCount: number }[];
         downloadsTrend: { month: string; downloadCount: number }[];
         newUsersTrend: { date: string; userCount: number }[];
+        usersTrend: { date: string; activeCount: number; deletedCount: number }[];
     };
 }
 
@@ -22,17 +22,17 @@ interface AnalyticsState {
     dashboardStats: DashboardStats | null;
     loading: boolean;
     error: string | null;
-    fetchDashboardStats: () => Promise<void>;
+    fetchDashboardStats: (params?: analyticsService.DashboardStatsParams) => Promise<void>;
 }
 
 export const useAnalyticsStore = create<AnalyticsState>((set) => ({
     dashboardStats: null,
     loading: false,
     error: null,
-    fetchDashboardStats: async () => {
+    fetchDashboardStats: async (params) => {
         set({ loading: true, error: null });
         try {
-            const stats = await analyticsService.getDashboardStats();
+            const stats = await analyticsService.getDashboardStats(params);
             set({ dashboardStats: stats, loading: false });
         } catch (err: unknown) {
             const error = err as Error;

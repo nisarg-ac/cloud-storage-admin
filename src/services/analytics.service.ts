@@ -7,18 +7,25 @@ export interface DashboardStatsResponse {
         deletedUsers: number;
         totalStorageBytes: number;
         totalSharedLinkViews: number;
-        totalDownloads: number;
     };
     trends: {
         storageUsageTrend: { month: string; storageGB: number }[];
         fileViewsTrend: { month: string; viewCount: number }[];
         downloadsTrend: { month: string; downloadCount: number }[];
         newUsersTrend: { date: string; userCount: number }[];
+        usersTrend: { date: string; activeCount: number; deletedCount: number }[];
     };
 }
 
-export const getDashboardStats = async (): Promise<DashboardStatsResponse> => {
-    const response = await apiClient.get('/web/analytics/dashboard-stats');
+export interface DashboardStatsParams {
+    usersTrendStartDate?: string;
+    usersTrendEndDate?: string;
+    newUsersTrendStartDate?: string;
+    newUsersTrendEndDate?: string;
+}
+
+export const getDashboardStats = async (params?: DashboardStatsParams): Promise<DashboardStatsResponse> => {
+    const response = await apiClient.get('/web/analytics/dashboard-stats', { params });
     return response.data.data;
 };
 

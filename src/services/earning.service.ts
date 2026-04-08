@@ -389,8 +389,8 @@ export const earningService = {
         return response.data.data;
     },
 
-    approvePayout: async (id: string, note?: string) => {
-        const response = await apiClient.patch<{ data: Payout }>(`/web/earning/payouts/${id}/approve`, { note });
+    approvePayout: async (id: string, note?: string, forceApprove: boolean = false) => {
+        const response = await apiClient.patch<{ data: Payout }>(`/web/earning/payouts/${id}/approve`, { note, forceApprove });
         return response.data.data;
     },
 

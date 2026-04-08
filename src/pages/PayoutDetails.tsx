@@ -38,6 +38,7 @@ export const PayoutDetails = () => {
     const [failReason, setFailReason] = useState('');
     const [providerName, setProviderName] = useState('');
     const [transactionRef, setTransactionRef] = useState('');
+    const [forceApprove, setForceApprove] = useState(false);
 
     const fetchPayout = async () => {
         if (!id) return;
@@ -63,6 +64,7 @@ export const PayoutDetails = () => {
         setProviderName('');
         setTransactionRef('');
         setActionError(null);
+        setForceApprove(false);
         setActiveAction(action);
     };
 
@@ -77,7 +79,7 @@ export const PayoutDetails = () => {
         setActionError(null);
         try {
             if (activeAction === 'approve') {
-                await earningService.approvePayout(payout.id, note || undefined);
+                await earningService.approvePayout(payout.id, note || undefined, forceApprove);
             } else if (activeAction === 'hold') {
                 if (!holdReason.trim()) {
                     setActionError('Hold reason is required.');
@@ -352,6 +354,21 @@ export const PayoutDetails = () => {
                                 placeholder="Admin note for audit log..."
                             />
                         </div>
+
+                        {activeAction === 'approve' && (
+                            <div className="flex items-center gap-2 py-1">
+                                <input
+                                    type="checkbox"
+                                    id="forceApprove"
+                                    checked={forceApprove}
+                                    onChange={e => setForceApprove(e.target.checked)}
+                                    className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer"
+                                />
+                                <label htmlFor="forceApprove" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                    Force approve (before release date)
+                                </label>
+                            </div>
+                        )}
                         {actionError && (
                             <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2">
                                 <AlertTriangle className="w-4 h-4 shrink-0" />
