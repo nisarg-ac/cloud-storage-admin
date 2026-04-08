@@ -59,7 +59,7 @@ export const UserDetails = () => {
     ];
 
     return (
-        <div className="space-y-6 max-w-6xl mx-auto pb-10">
+        <div className="space-y-6">
             <div className="flex items-center justify-between mb-2 flex-wrap gap-4">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" className="hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => navigate(-1)}>

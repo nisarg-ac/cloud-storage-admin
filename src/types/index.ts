@@ -25,6 +25,16 @@ export interface User {
     planName: string;
     totalDownloads: number;
     totalViews: number;
+    earningSuspended?: boolean;
+    earningSuspendedBy?: string | null;
+    earningSuspendedAt?: string | null;
+    earningSuspendedReason?: string | null;
+    payoutBlocked?: boolean;
+    payoutBlockedBy?: string | null;
+    payoutBlockedAt?: string | null;
+    payoutBlockedCategory?: string | null;
+    earningPlanSwitchCount?: number;
+    maxEarningPlanSwitches?: number;
     activeEarningPlan?: {
         planId: string;
         planName: string;

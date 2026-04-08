@@ -19,11 +19,13 @@ export interface GetUsersResult {
 
 export const getUsers = async (params?: GetUsersParams): Promise<GetUsersResult> => {
     try {
+        const { search, ...otherParams } = params || {};
         const response = await apiClient.get('/web/admin/users', {
             params: {
                 sortBy: 'createdAt',
                 sortOrder: 'desc',
-                ...params,
+                ...otherParams,
+                ...(search ? { search } : {}),
             }
         });
         const data = response.data?.data;

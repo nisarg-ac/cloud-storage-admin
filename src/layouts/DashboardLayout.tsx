@@ -34,6 +34,7 @@ export const DashboardLayout = () => {
             superAdminOnly: false,
             subItems: [
                 { name: 'Overview', path: '/revenue', superAdminOnly: false },
+                { name: 'Users', path: '/revenue/users', superAdminOnly: false },
                 { name: 'Revenue Events', path: '/revenue/events', superAdminOnly: false },
                 { name: 'Payouts', path: '/revenue/payouts', superAdminOnly: false },
                 { name: 'Earning Plans', path: '/revenue/plans', superAdminOnly: true },

@@ -21,6 +21,7 @@ import { RevenueConfig } from './pages/RevenueConfig';
 import { RevenuePlans } from './pages/RevenuePlans';
 import { AuditLog } from './pages/AuditLog';
 import { AppConfig } from './pages/AppConfig';
+import { RevenueUsers } from './pages/RevenueUsers';
 import { TooltipProvider } from './components/ui/tooltip';
 import { useAuthStore, isSuperAdmin } from './store/auth.store';
 
@@ -43,6 +44,7 @@ function App() {
               <Route path="/reported-files" element={<ReportedFiles />} />
 
               <Route path="/revenue" element={<RevenueOverview />} />
+              <Route path="/revenue/users" element={<RevenueUsers />} />
               <Route path="/revenue/events" element={<RevenueEvents />} />
               <Route path="/revenue/events/:id" element={<RevenueEventDetails />} />
               <Route path="/revenue/payouts" element={<Payouts />} />

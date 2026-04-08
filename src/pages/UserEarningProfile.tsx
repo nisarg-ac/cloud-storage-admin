@@ -113,8 +113,8 @@ export const UserEarningProfileView = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" onClick={() => navigate(`/user/${id}`)}>
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Back to User
+                    <Button variant="outline" size="icon" className="hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => navigate(-1)}>
+                        <ArrowLeft className="w-4 h-4" />
                     </Button>
                     <h1 className="text-2xl font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                         <DollarSign className="w-6 h-6 text-emerald-500" />
