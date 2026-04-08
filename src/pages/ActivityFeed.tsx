@@ -46,7 +46,7 @@ export const ActivityFeed = () => {
         try {
             const res = await earningService.getActivityFeed({
                 page,
-                limit: 50,
+                limit: 1000,
                 type: type !== 'ALL' ? type : undefined,
                 date: date || undefined,
             });

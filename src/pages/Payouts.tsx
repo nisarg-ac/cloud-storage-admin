@@ -48,7 +48,7 @@ export const Payouts = () => {
             setLoading(true);
             const res = await earningService.getPayouts({
                 page,
-                limit: 50,
+                limit: 100,
                 status: statusFilter || undefined,
                 userId: userIdFilter || undefined,
                 amountMin: amountMin && !isNaN(parseFloat(amountMin)) ? Math.round(parseFloat(amountMin) * 1_000_000).toString() : undefined,

@@ -57,7 +57,7 @@ export const AuditLog = () => {
             setLoading(true);
             const data = await earningService.getAuditLog({
                 page,
-                limit: 50,
+                limit: 100,
                 action: actionFilter || undefined,
                 entityType: entityFilter || undefined,
                 adminUserId: adminUserIdFilter || undefined,

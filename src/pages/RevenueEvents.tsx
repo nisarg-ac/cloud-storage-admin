@@ -52,12 +52,12 @@ export const RevenueEvents = () => {
         try {
             setLoading(true);
             if (activeTab === 'fraud') {
-                const res = await earningService.getFraudQueue({ page, limit: 50 });
+                const res = await earningService.getFraudQueue({ page, limit: 1000 });
                 setData(res);
             } else {
                 const res = await earningService.getEvents({
                     page,
-                    limit: 50,
+                    limit: 1000,
                     status: statusFilter || undefined,
                     type: typeFilter || undefined,
                     dateFrom: dateFrom || undefined,
