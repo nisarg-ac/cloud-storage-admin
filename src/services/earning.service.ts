@@ -135,6 +135,12 @@ export interface Payout {
     rejectionReason?: string | null;
 }
 
+export interface StatusMetrics {
+    count: number;
+    totalUnits: string;
+    totalUsd: string;
+}
+
 export interface UserEarningProfile {
     user: {
         id: string;
@@ -175,6 +181,14 @@ export interface UserEarningProfile {
         flaggedEvents: number;
         rejectedEvents: number;
         rejectionRate: number;
+    };
+    earningStatus: {
+        pending: StatusMetrics;
+        approved: StatusMetrics;
+        payable: StatusMetrics;
+        inPayout: StatusMetrics;
+        paid: StatusMetrics;
+        rejected: StatusMetrics;
     };
 }
 
@@ -288,49 +302,6 @@ function toPaginated<T>(items: T[], page: number, limit: number, response?: ApiR
     // If we got a full page, assume there may be more (next page will return empty if not).
     const inferredTotal = items.length === limit ? page * limit + 1 : (page - 1) * limit + items.length;
     return { data: items, total: inferredTotal, page, limit };
-}
-
-export interface UserEarningProfile {
-    user: {
-        id: string;
-        name: string;
-        email: string;
-        earningSuspended: boolean;
-        earningSuspendedBy: string | null;
-        earningSuspendedAt: string | null;
-        earningSuspendedReason: string | null;
-        payoutBlocked: boolean;
-        payoutBlockedBy: string | null;
-        payoutBlockedAt: string | null;
-        payoutBlockedCategory: string | null;
-        earningPlanSwitchCount: number;
-        maxEarningPlanSwitches: number;
-        createdAt: string;
-    };
-    earningPlan: {
-        id: string;
-        userId: string;
-        earningPlanId: string;
-        selectedAt: string;
-        earningPlan: {
-            id: string;
-            planName: string;
-            planType: string;
-            rewardPerViewUnits: string;
-            rewardPerSignupUnits: string;
-            isActive: boolean;
-        };
-    } | null;
-    totalEarned: string;
-    totalPaid: string;
-    recentEvents: RevenueEvent[];
-    payouts: Payout[];
-    fraudSummary: {
-        totalEvents: number;
-        flaggedEvents: number;
-        rejectedEvents: number;
-        rejectionRate: number;
-    };
 }
 
 export interface ActivityFeedResponse {
