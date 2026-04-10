@@ -50,6 +50,7 @@ function App() {
               <Route path="/revenue/payouts" element={<Payouts />} />
               <Route path="/revenue/payouts/:id" element={<PayoutDetails />} />
               <Route path="/revenue/audit-log" element={<AuditLog />} />
+              <Route path="/revenue/users/:id" element={<UserEarningProfileView />} />
 
 
               {/* Super admin only */}
@@ -67,7 +68,7 @@ function App() {
                 {/* <Route path="/revenue/events/:id" element={<RevenueEventDetails />} /> */}
                 {/* <Route path="/revenue/payouts" element={<Payouts />} /> */}
                 {/* <Route path="/revenue/payouts/:id" element={<PayoutDetails />} /> */}
-                <Route path="/revenue/users/:id" element={<UserEarningProfileView />} />
+                {/* <Route path="/revenue/users/:id" element={<UserEarningProfileView />} /> */}
                 <Route path="/revenue/config" element={<RevenueConfig />} />
                 <Route path="/revenue/plans" element={<RevenuePlans />} />
                 {/* <Route path="/revenue/audit-log" element={<AuditLog />} /> */}
