@@ -81,6 +81,8 @@ export const UserFileList = () => {
             name: file.name,
             sourceType: file.sourceType,
             url: file.url ?? '',
+            userId: userId ?? '',
+            fileType: type,
         });
         navigate(`/file/${file.id}?${params.toString()}`);
     };
