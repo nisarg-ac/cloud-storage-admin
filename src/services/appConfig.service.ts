@@ -9,9 +9,12 @@ export interface AppConfigUpdateResponse {
     updatedKeys: string[];
 }
 
+export type AdConfigPlatform = 'android' | 'ios' | 'others';
+
 export interface AdConfigRow {
     vendor: string;
     format: string;
+    platform: AdConfigPlatform;
     enabled: boolean;
     metadata: Record<string, unknown> | null;
     updated_by: string | null;
@@ -39,15 +42,15 @@ export const appConfigService = {
         return response.data.data.rows;
     },
 
-    upsertAdConfig: async (vendor: string, format: string, payload: AdConfigUpsertPayload): Promise<AdConfigRow> => {
+    upsertAdConfig: async (vendor: string, format: string, platform: AdConfigPlatform, payload: AdConfigUpsertPayload): Promise<AdConfigRow> => {
         const response = await apiClient.put<{ data: AdConfigRow }>(
-            `/web/admin/ad-config/${encodeURIComponent(vendor)}/${encodeURIComponent(format)}`,
+            `/web/admin/ad-config/${encodeURIComponent(vendor)}/${encodeURIComponent(format)}/${encodeURIComponent(platform)}`,
             payload
         );
         return response.data.data;
     },
 
-    deleteAdConfig: async (vendor: string, format: string): Promise<void> => {
-        await apiClient.delete(`/web/admin/ad-config/${encodeURIComponent(vendor)}/${encodeURIComponent(format)}`);
+    deleteAdConfig: async (vendor: string, format: string, platform: AdConfigPlatform): Promise<void> => {
+        await apiClient.delete(`/web/admin/ad-config/${encodeURIComponent(vendor)}/${encodeURIComponent(format)}/${encodeURIComponent(platform)}`);
     },
 };

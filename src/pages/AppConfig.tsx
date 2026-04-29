@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { appConfigService, AdConfigRow, AdConfigUpsertPayload } from '../services/appConfig.service';
+import { appConfigService, AdConfigRow, AdConfigUpsertPayload, AdConfigPlatform } from '../services/appConfig.service';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -12,6 +12,13 @@ import {
     DialogFooter,
     DialogDescription,
 } from '../components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../components/ui/select';
 import {
     Table,
     TableBody,
@@ -26,22 +33,33 @@ import { formatDate } from '../utils';
 // Known slugs for datalist suggestions
 const VENDOR_SLUGS = ['admob', 'facebook', 'unity', 'applovin'];
 const FORMAT_SLUGS = ['banner', 'interstitial', 'rewarded', 'native', 'app_open'];
+const PLATFORMS: AdConfigPlatform[] = ['android', 'ios', 'others'];
+
+const PLATFORM_BADGE: Record<AdConfigPlatform, string> = {
+    android: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+    ios: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+    others: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+};
+
+const rowKey = (row: AdConfigRow) => `${row.vendor}/${row.format}/${row.platform}`;
 
 // ─── Ad Config Form Dialog ────────────────────────────────────────────────────
 
 interface AdConfigFormDialogProps {
     open: boolean;
     initial: AdConfigRow | null;
+    defaultPlatform?: AdConfigPlatform;
     saving: boolean;
     error: string | null;
     onClose: () => void;
-    onSubmit: (vendor: string, format: string, payload: AdConfigUpsertPayload) => void;
+    onSubmit: (vendor: string, format: string, platform: AdConfigPlatform, payload: AdConfigUpsertPayload) => void;
 }
 
-const AdConfigFormDialog = ({ open, initial, saving, error, onClose, onSubmit }: AdConfigFormDialogProps) => {
+const AdConfigFormDialog = ({ open, initial, defaultPlatform, saving, error, onClose, onSubmit }: AdConfigFormDialogProps) => {
     const isEdit = initial !== null;
     const [vendor, setVendor] = useState('');
     const [format, setFormat] = useState('');
+    const [platform, setPlatform] = useState<AdConfigPlatform | ''>('');
     const [enabled, setEnabled] = useState(true);
     const [metadataRaw, setMetadataRaw] = useState('');
     const [metadataError, setMetadataError] = useState<string | null>(null);
@@ -50,6 +68,7 @@ const AdConfigFormDialog = ({ open, initial, saving, error, onClose, onSubmit }:
         if (open) {
             setVendor(initial?.vendor ?? '');
             setFormat(initial?.format ?? '');
+            setPlatform(initial?.platform ?? defaultPlatform ?? '');
             setEnabled(initial?.enabled ?? true);
             setMetadataRaw(initial?.metadata ? JSON.stringify(initial.metadata, null, 2) : '');
             setMetadataError(null);
@@ -67,10 +86,10 @@ const AdConfigFormDialog = ({ open, initial, saving, error, onClose, onSubmit }:
                 return;
             }
         }
-        onSubmit(vendor.trim(), format.trim(), { enabled, metadata });
+        onSubmit(vendor.trim(), format.trim(), platform as AdConfigPlatform, { enabled, metadata });
     };
 
-    const canSubmit = vendor.trim().length > 0 && format.trim().length > 0;
+    const canSubmit = vendor.trim().length > 0 && format.trim().length > 0 && platform !== '';
 
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -79,8 +98,8 @@ const AdConfigFormDialog = ({ open, initial, saving, error, onClose, onSubmit }:
                     <DialogTitle>{isEdit ? 'Edit Ad Config Entry' : 'Add Ad Config Entry'}</DialogTitle>
                     <DialogDescription>
                         {isEdit
-                            ? `Editing ${initial!.vendor} / ${initial!.format}`
-                            : 'Configure a new vendor and ad format combination.'}
+                            ? `Editing ${initial!.vendor} / ${initial!.format} / ${initial!.platform}`
+                            : 'Configure a new vendor, ad format, and platform combination.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -125,11 +144,37 @@ const AdConfigFormDialog = ({ open, initial, saving, error, onClose, onSubmit }:
                         )}
                     </div>
 
+                    {/* Platform */}
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Platform <span className="text-red-500">*</span>
+                        </label>
+                        {isEdit ? (
+                            <>
+                                <div className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium ${platform ? PLATFORM_BADGE[platform as AdConfigPlatform] : ''}`}>
+                                    {platform}
+                                </div>
+                                <p className="text-xs text-slate-400">Platform cannot be changed — delete and re-add to change it.</p>
+                            </>
+                        ) : (
+                            <Select value={platform} onValueChange={(v) => setPlatform(v as AdConfigPlatform)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select platform" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {PLATFORMS.map((p) => (
+                                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div>
+
                     {/* Enabled toggle */}
                     <div className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                         <div>
                             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Enabled</p>
-                            <p className="text-xs text-slate-400 mt-0.5">Whether this vendor/format combination is active</p>
+                            <p className="text-xs text-slate-400 mt-0.5">Whether this vendor/format/platform combination is active</p>
                         </div>
                         <Button
                             type="button"
@@ -206,7 +251,7 @@ const DeleteConfirmDialog = ({ target, deleting, error, onClose, onConfirm }: De
                 <DialogDescription>
                     Are you sure you want to delete{' '}
                     <span className="font-semibold text-slate-800 dark:text-white">
-                        {target?.vendor}/{target?.format}
+                        {target?.vendor}/{target?.format}/{target?.platform}
                     </span>
                     ? This cannot be undone.
                 </DialogDescription>
@@ -260,6 +305,7 @@ export const AppConfig = () => {
     // ── Ad Config state ──
     const [adRows, setAdRows] = useState<AdConfigRow[]>([]);
     const [adLoading, setAdLoading] = useState(true);
+    const [adTab, setAdTab] = useState<AdConfigPlatform>('android');
 
     // Form dialog
     const [formOpen, setFormOpen] = useState(false);
@@ -338,11 +384,11 @@ export const AppConfig = () => {
     };
 
     // ── Ad Config: upsert ──
-    const handleFormSubmit = async (vendor: string, format: string, payload: AdConfigUpsertPayload) => {
+    const handleFormSubmit = async (vendor: string, format: string, platform: AdConfigPlatform, payload: AdConfigUpsertPayload) => {
         setFormSaving(true);
         setFormError(null);
         try {
-            await appConfigService.upsertAdConfig(vendor, format, payload);
+            await appConfigService.upsertAdConfig(vendor, format, platform, payload);
             setFormOpen(false);
             await fetchAdConfig();
         } catch (err: unknown) {
@@ -355,10 +401,10 @@ export const AppConfig = () => {
 
     // ── Ad Config: inline enabled toggle ──
     const handleRowToggle = async (row: AdConfigRow) => {
-        const key = `${row.vendor}/${row.format}`;
+        const key = rowKey(row);
         setTogglingKey(key);
         try {
-            await appConfigService.upsertAdConfig(row.vendor, row.format, {
+            await appConfigService.upsertAdConfig(row.vendor, row.format, row.platform, {
                 enabled: !row.enabled,
                 metadata: row.metadata ?? undefined,
             });
@@ -376,7 +422,7 @@ export const AppConfig = () => {
         setDeleteInProgress(true);
         setDeleteError(null);
         try {
-            await appConfigService.deleteAdConfig(deletingRow.vendor, deletingRow.format);
+            await appConfigService.deleteAdConfig(deletingRow.vendor, deletingRow.format, deletingRow.platform);
             setDeletingRow(null);
             await fetchAdConfig();
         } catch (err: unknown) {
@@ -451,7 +497,7 @@ export const AppConfig = () => {
                         <div>
                             <CardTitle>Ad Configuration</CardTitle>
                             <CardDescription className="mt-1">
-                                Manage ad vendor and format combinations served to mobile users.
+                                Manage ad vendor and format combinations per platform.
                             </CardDescription>
                         </div>
                         <Button
@@ -463,6 +509,36 @@ export const AppConfig = () => {
                             Add Entry
                         </Button>
                     </div>
+
+                    {/* Platform tabs */}
+                    {!adLoading && adRows.length > 0 && (
+                        <div className="flex gap-1 mt-4 border-b border-slate-200 dark:border-slate-700">
+                            {PLATFORMS.map((p) => {
+                                const count = adRows.filter(r => r.platform === p).length;
+                                const isActive = adTab === p;
+                                return (
+                                    <button
+                                        key={p}
+                                        onClick={() => setAdTab(p)}
+                                        className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                                            isActive
+                                                ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                                                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                                        }`}
+                                    >
+                                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                                        <span className={`inline-flex items-center justify-center rounded-full text-xs px-1.5 py-0 min-w-[1.25rem] h-5 ${
+                                            isActive
+                                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                        }`}>
+                                            {count}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {adLoading ? (
@@ -475,81 +551,92 @@ export const AppConfig = () => {
                                 Add your first entry
                             </Button>
                         </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Vendor</TableHead>
-                                    <TableHead>Format</TableHead>
-                                    <TableHead>Enabled</TableHead>
-                                    <TableHead>Metadata</TableHead>
-                                    <TableHead>Last Updated</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {adRows.map((row) => {
-                                    const key = `${row.vendor}/${row.format}`;
-                                    const isToggling = togglingKey === key;
-                                    return (
-                                        <TableRow key={key}>
-                                            <TableCell>
-                                                <Badge variant="outline" className="font-mono text-xs">
-                                                    {row.vendor}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary" className="font-mono text-xs">
-                                                    {row.format}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant={row.enabled ? 'default' : 'outline'}
-                                                    size="sm"
-                                                    onClick={() => handleRowToggle(row)}
-                                                    disabled={isToggling}
-                                                    className={`w-20 justify-between transition-all ${row.enabled ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
-                                                >
-                                                    {row.enabled ? (
-                                                        <><span>ON</span><Check className="w-3.5 h-3.5" /></>
-                                                    ) : (
-                                                        <><span>OFF</span><X className="w-3.5 h-3.5" /></>
-                                                    )}
-                                                </Button>
-                                            </TableCell>
-                                            <TableCell>
-                                                <MetadataPreview metadata={row.metadata} />
-                                            </TableCell>
-                                            <TableCell className="text-sm text-slate-500 whitespace-nowrap">
-                                                {formatDate(row.updated_at)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                    ) : (() => {
+                        const visibleRows = adRows.filter(r => r.platform === adTab);
+                        return visibleRows.length === 0 ? (
+                            <div className="py-10 text-center space-y-2">
+                                <p className="text-slate-500 text-sm">No entries for {adTab} yet.</p>
+                                <Button variant="outline" size="sm" onClick={openAdd}>
+                                    <Plus className="w-4 h-4 mr-1.5" />
+                                    Add {adTab} entry
+                                </Button>
+                            </div>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Vendor</TableHead>
+                                        <TableHead>Format</TableHead>
+                                        <TableHead>Enabled</TableHead>
+                                        <TableHead>Metadata</TableHead>
+                                        <TableHead>Last Updated</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {visibleRows.map((row) => {
+                                        const key = rowKey(row);
+                                        const isToggling = togglingKey === key;
+                                        return (
+                                            <TableRow key={key}>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="font-mono text-xs">
+                                                        {row.vendor}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary" className="font-mono text-xs">
+                                                        {row.format}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
                                                     <Button
-                                                        variant="ghost"
+                                                        variant={row.enabled ? 'default' : 'outline'}
                                                         size="sm"
-                                                        onClick={() => openEdit(row)}
-                                                        className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900"
+                                                        onClick={() => handleRowToggle(row)}
+                                                        disabled={isToggling}
+                                                        className={`w-20 justify-between transition-all ${row.enabled ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
                                                     >
-                                                        <Pencil className="w-3.5 h-3.5" />
+                                                        {row.enabled ? (
+                                                            <><span>ON</span><Check className="w-3.5 h-3.5" /></>
+                                                        ) : (
+                                                            <><span>OFF</span><X className="w-3.5 h-3.5" /></>
+                                                        )}
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => { setDeleteError(null); setDeletingRow(row); }}
-                                                        className="h-8 w-8 p-0 text-slate-500 hover:text-red-600"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <MetadataPreview metadata={row.metadata} />
+                                                </TableCell>
+                                                <TableCell className="text-sm text-slate-500 whitespace-nowrap">
+                                                    {formatDate(row.updated_at)}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => openEdit(row)}
+                                                            className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900"
+                                                        >
+                                                            <Pencil className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => { setDeleteError(null); setDeletingRow(row); }}
+                                                            className="h-8 w-8 p-0 text-slate-500 hover:text-red-600"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        );
+                    })()}
                 </CardContent>
             </Card>
 
@@ -565,6 +652,7 @@ export const AppConfig = () => {
             <AdConfigFormDialog
                 open={formOpen}
                 initial={editingRow}
+                defaultPlatform={adTab}
                 saving={formSaving}
                 error={formError}
                 onClose={closeForm}

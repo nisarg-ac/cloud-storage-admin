@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Cloud, Users, LayoutDashboard, BarChart3, LogOut, Menu, AlertTriangle, DollarSign, ChevronDown, Settings } from 'lucide-react';
+import { Cloud, Users, LayoutDashboard, BarChart3, LogOut, Menu, AlertTriangle, DollarSign, ChevronDown, Settings, Smartphone } from 'lucide-react';
 import { useAuthStore, isSuperAdmin } from '../store/auth.store';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
@@ -28,6 +28,7 @@ export const DashboardLayout = () => {
         { name: 'Users', path: '/users', icon: Users, superAdminOnly: true },
         { name: 'Analytics', path: '/analytics', icon: BarChart3, superAdminOnly: true },
         { name: 'App Config', path: '/app-config', icon: Settings, superAdminOnly: true },
+        { name: 'App Versions', path: '/app-versions', icon: Smartphone, superAdminOnly: true },
         {
             name: 'Revenue',
             icon: DollarSign,
